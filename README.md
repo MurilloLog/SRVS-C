@@ -129,16 +129,16 @@ A. The system supports theoretically unlimited connections, but practical perfor
 
 ## Please kindly cite our paper as:
 ```
-@inproceedings{10.1145/3722564.3728390,
-author = {Murillo Gutierrez, Gustavo Adolfo and Jin, Rong and Ramirez Paredes, Juan Pablo Ignacio and Hernandez Belmonte, Uriel Haile},
-title = {A Framework for Collaborative Augmented Reality Applications},
+@inproceedings{,
+author = {},
+title = {},
 year = {2025},
-isbn = {9798400718335},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA},
-url = {https://doi.org/10.1145/3722564.3728390},
-doi = {10.1145/3722564.3728390},
-series = {I3D Companion '25}
+isbn = {},
+publisher = {},
+address = {},
+url = {},
+doi = {},
+series = {}
 }
 ```
 
