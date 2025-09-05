@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+message Messages {
+    // --- Campos generales ---
+    string command = 1;  // Ej: "DRAW", "CLEAR", "UPDATE_PLAYER_POSE"
+    string _id = 2;      // ID único del usuario
+    string roomId = 3;   // ID de la sala
+
+    // --- Datos de Anchor (opcional) ---
+    message Anchor {
+        string anchorID = 1;
+        repeated float position = 2;  // [x, y, z]
+    }
+    Anchor anchor = 4;
+
+    // --- Datos de Línea/Dibujo (opcional) ---
+    message Line {
+        repeated float points = 1;    // Lista plana: [x1, y1, z1, x2, y2, z2, ...]
+        int32 color = 2;              // Color
+        int32 size = 3;               // Grosor de la línea
+    }
+    Line line = 5;
+}
