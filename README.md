@@ -1,24 +1,25 @@
-# A Framework Designed with Perceptual Symmetry and Interactive Asymmetry for XR Collaboration | Symmetry 2025
+# SRVS-C: Source Code for the Spatially Referenced Virtual Synchronization for Collaboration Algorithm
 
 <div align="center">
   <img src="./Assets/Fig_teaser.png" alt="Two users collaborating on AR drawing" width="600">
   <p><em>Figure: Snapshot of two SRVS-C user interfaces in a collaborative spatial sketching scenario. Left API-VR interface: users draw in 3D space using handheld 6DoF controllers, selecting brush properties such as color and thickness via an in-world palette. Right API-AR interface: users draw via touch input on an ARCore-enabled smartphone screen, with brush customization available through an overlaid 2D toolbar</em></p>
 </div>
 
-<!--## Overview
-This repository presents a framework designed to streamline the deployment and configuration of colocated collaborative augmented reality (AR) experiences for mobile devices (currently supporting ARCore-compatible devices). The solution employs a centralized client-server architecture, where a dedicated local server (PC) manages real-time data communication and synchronization across connected devices. This approach eliminates reliance on cloud anchor services or third-party platforms, which often impose restrictive limitations.
+## Overview
+This repository presents a framework designed to streamline the deployment and configuration of colocated collaborative mixed reality (MR) experiences that bridge both augmented reality (mobile AR) and virtual reality (VR) environments. The solution employs a centralized client-server architecture, where a dedicated local server (PC) manages real-time data communication and synchronization across connected devices, enabling seamless interaction between AR and VR participants. This approach eliminates reliance on cloud anchor services or third-party platforms, which often impose restrictive limitations, while supporting both ARCore-compatible mobile devices and various VR headsets for truly cross-reality collaborative experiences.
 
 Perfect for:
-- Prototyping multi-user AR experiences
+- Prototyping multi-user AR/VR experiences
 - Collaborative projects
 - AR education tools
 
 ## 🧩 Project Components
 
-| Folder | Purpose | What You'll Find There |
-|--------|---------|------------------------|
-| `Server/` | Contains the complete architecture and technical configuration for the local server, including all necessary components and operational processes | Server code, database setup |
-| `App/` | Includes the mobile application implementation that connects to and interacts with the server framework | Unity project, App setup |
+|    Folder    | Purpose | What You'll Find There |
+|-----------|---------|------------------------|
+| `SRVS-C/` | Contains the complete architecture and technical configuration for the local server, including all necessary components and operational processes | Server code, database setup |
+| `API-AR/` | Includes the mobile application implementation that connects to and interacts with the server framework | Unity project, App setup |
+| `API-VR/` | Includes the VR application implementation that connects to and interacts with the server framework | Unity project, VR setup |
 
 
 ## 🛠️ Setup Guide
@@ -28,23 +29,26 @@ You'll need:
 
 ✔ **Computer**: Windows/Mac/Linux with:
   - Node.js v22.12.0 ([installation guide](https://nodejs.org/en/download))
-  - MongoDB 8.0.4 ([installation guide](https://www.mongodb.com/docs/manual/installation/))
+  - MongoDB 8.0.4 ([Optional](https://www.mongodb.com/docs/manual/installation/))
 
-✔ **Phones**: 2+ Android devices with:
+✔ **Phone**: Android devices with:
   - ARCore support ([compatibility list](https://developers.google.com/ar/devices))
   - Developer mode enabled
-    
-✔ Refer to [SERVER.md](./Server/README.md) and [APP.md](./App/README.md) for setup instructions.
 
+✔ **VR Device**: VR device with a 6DoF controller (Oculus Rift recommended):
+  - Meta Quest Developer Hub app installed on PC (for Quest devices)
+ 
+✔ Refer to [SRVS-C.md](./SRVS-C/README.md), [API-AR.md](./API-AR/README.md) and [API-VR.md](./API-VR/README.md) for setup instructions.
+<!--
 ### Step 1: Get the Code
 1. **Clone the repository** (download the project):
   ```bash
-  git clone https://github.com/MurilloLog/CollabAR.git
+  git clone https://github.com/MurilloLog/SRVS-C.git
   ```
 
 2. **Navigate into the project folder**:
   ```bash
-  cd CollabAR
+  cd SRVS-C
   ```
 
 ### Step 2: Launch the Server
