@@ -12,16 +12,4 @@ public class Drawings
     public List<Vector3> linePoints; // List of points in the line
     public int lineColor; // Could store as hex or reference to color palette
     public int size; // Line width or size
-
-    public Drawings(string playerId, string _roomId, string anchorId, Vector3 position, List<Vector3> points, int color, int _size)
-    {
-        command = "DRAWING";
-        _id = playerId;
-        roomId = _roomId;
-        anchorID = anchorId;
-        anchorPosition = position;
-        linePoints = points;
-        lineColor = color;
-        size = _size;
-    }
 }
