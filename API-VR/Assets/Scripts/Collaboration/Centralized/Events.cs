@@ -27,7 +27,7 @@ public class Events : MonoBehaviour
     private static readonly string HeartbeatMessage = "{\"command\":\"HEARTBEAT\"}|";
     private static readonly byte[] HeartbeatBytes = Encoding.UTF8.GetBytes(HeartbeatMessage);
     private float nextHeartbeatTime = 0f;
-    private const float heartbeatInterval = 15f; // 15 segundos
+    private const float heartbeatInterval = 15f; // 15 seconds interval
 
     public SearchRoom searchRoom = new SearchRoom();
     public PlayerPose playerPose = new PlayerPose();
@@ -39,7 +39,7 @@ public class Events : MonoBehaviour
     public JsonData JSONPackageReceived = new JsonData();
 
     private StringBuilder _messageBuilder = new StringBuilder(); // To accumulate fragments of messages
-    private ISerializationService _JsonSerializer = new JsonSerializerService(); // Punto de configuración
+    private ISerializationService _JsonSerializer = new JsonSerializerService(); // Serializer instance
 
     void Start()
     {
@@ -78,9 +78,9 @@ public class Events : MonoBehaviour
         conectionStatus.playerIsAlone = false;
         conectionStatus.playerIsWaiting = true;
         
-        // Configura el serializador (podría venir de ServerSettings)
+        // Choose the serialization method
         _JsonSerializer = new JsonSerializerService(); 
-        // O alternativamente:
+        // Or:
         // _serializer = new BinarySerializerService();
     }
 
@@ -262,9 +262,9 @@ public class Events : MonoBehaviour
                 {
                     if (Time.time >= nextHeartbeatTime)
                     {
-                        sendHeartbeat(); // Actualizar la estructura
+                        sendHeartbeat(); // Send heartbeat
                         //Debug.Log("Heartbeat sent to server...");
-                        nextHeartbeatTime = Time.time + heartbeatInterval; // Programar proximo heartbeat
+                        nextHeartbeatTime = Time.time + heartbeatInterval; // Schedule next heartbeat
                     }
                 }
             }
@@ -276,17 +276,17 @@ public class Events : MonoBehaviour
         readingFromServer = false;
         int size = networkBehaviour.stream.EndRead(_IAsyncResult);
         
-        // Acumula los fragmentos
+        // Accumulate the received data
         _messageBuilder.Append(Encoding.UTF8.GetString(networkBehaviour.data, 0, size));
         
-        // Verifica si hay más datos pendientes
+        // Check if more data is available
         if (networkBehaviour.stream.DataAvailable) {
             networkBehaviour.stream.BeginRead(
                 networkBehaviour.data, 0, networkBehaviour.data.Length,
                 new AsyncCallback(endReadingProcess), networkBehaviour.stream
             );
         } else {
-            // Procesa el mensaje completo
+            // No more data, process the complete message
             string fullMessage = _messageBuilder.ToString();
             _messageBuilder.Clear();
             readAction(fullMessage);
@@ -296,75 +296,5 @@ public class Events : MonoBehaviour
     private void OnApplicationQuit()
     {
         networkBehaviour.isRunning = false;
-    }
-
-    private void UpdatePlayerPose()
-    {
-        playerPose.poseUpdate();
-        if(playerPose.getPreviousMovement() != playerPose.getCurrentMovement())
-        {
-            playerPose.setPreviousMovement();
-            playerPose.setCommand("UPDATE_PLAYER_POSE");
-            playerPose.setPlayerID(id);
-            JSONPackage = JsonUtility.ToJson(playerPose, true);
-            sendAction(JSONPackage);
-            if(playerPose.isFirstPose())
-            {
-                playerFrame.name = "playerFrame";
-                playerFrame = (GameObject) Instantiate(playerFrame);
-                playerPose.setFirstPose();
-            }
-        }
-    }
-
-    private void UpdateEnvironment()
-    {
-        // Searching for a GameObject
-        /* Comentario de seguridad
-        float smooth = 10.0f;
-        try
-        {
-            if( Lean.Common.LeanSpawn.objects.ContainsKey(JSONPackageReceived.getID()) )
-            {
-                Debug.Log("Si existe un GameObject con el ID recibido");
-                GameObject syncronizedObject;
-                if (Lean.Common.LeanSpawn.objects.TryGetValue(JSONPackageReceived.getID(), out syncronizedObject))
-                {
-                    syncronizedObject.transform.position = Vector3.Slerp(syncronizedObject.transform.position, JSONPackageReceived.getPosition(), Time.deltaTime * smooth);
-                    syncronizedObject.transform.rotation = Quaternion.Slerp(syncronizedObject.transform.rotation, JSONPackageReceived.getRotation(),  Time.deltaTime * smooth);
-                    syncronizedObject.transform.localScale = JSONPackageReceived.getScale();
-                    Debug.Log("Objecto actualizado por otro jugador");
-                }
-                else
-                {
-                    Debug.Log("Objecto no encontrado");
-                }
-            }
-            else
-            {
-                if (updatingObjectPose)
-                {
-                    Debug.Log("No existe un GameObject con el ID recibido");
-                    GameObject syncronizedObject;
-                    syncronizedObject = Instantiate(Resources.Load<GameObject>($"Prefabs/Environment/{JSONPackageReceived.getObjectMesh()}"));
-                    //Instantiate(objectPrefab);
-                    syncronizedObject.name = JSONPackageReceived.getID();
-                    //syncronizedObject.objectMesh = JSONPackageReceived.getObjectMesh();
-                    syncronizedObject.transform.position = JSONPackageReceived.getPosition();
-                    syncronizedObject.transform.rotation = JSONPackageReceived.getRotation();
-                    
-                    //objectToCreate.Push(syncronizedObject);
-
-                    Lean.Common.LeanSpawn.objects.Add(JSONPackageReceived.getID(), syncronizedObject.gameObject);
-                    Debug.Log("Se creo el nuevo objeto");
-                    updatingObjectPose = false;
-                }
-            }
-        }
-        catch (ArgumentException)
-        {
-            Debug.Log("Error with dictionary key");
-        }
-    */
     }
 }
