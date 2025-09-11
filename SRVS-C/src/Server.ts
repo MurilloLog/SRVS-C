@@ -305,7 +305,8 @@ async function handleDrawing(jsonData: any, player: IPlayer) {
     try {
         if (player.roomId) {
             const room = rooms.get(player.roomId);
-            room?.broadcast(jsonData, jsonData._id);
+            room?.broadcast(jsonData); // Broadcast to all players in the room
+            //room?.broadcast(jsonData, jsonData._id); // Broadcast to all except sender
         }
     } catch (error) {
         console.error("[ERROR] Drawing Error:", error);
