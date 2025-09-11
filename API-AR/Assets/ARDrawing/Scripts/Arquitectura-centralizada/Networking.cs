@@ -1,10 +1,3 @@
-/* 
-    *********************************************************
-    To install Json from NuGet use this command:
-        Install-Package System.Json -Version 4.0.20126.16343
-    *********************************************************
-*/ 
-
 using UnityEngine;
 using System.Net.Sockets;
 using System;

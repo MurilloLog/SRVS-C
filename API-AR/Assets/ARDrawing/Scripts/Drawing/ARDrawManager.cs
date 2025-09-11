@@ -39,12 +39,6 @@ public class ARDrawManager : Singleton<ARDrawManager>
     private Queue<DrawingTask> drawingQueue = new Queue<DrawingTask>();
     private bool isDrawing = false;
 
-    [Header("Network Configuration")]
-    //[SerializeField] private bool _useDecentralizedNetwork = true;
-    private const string DrawingTopic = "ARDrawing";
-    
-    
-    
     // Clase para manejar tareas de dibujo
     private class DrawingTask
     {
@@ -56,7 +50,7 @@ public class ARDrawManager : Singleton<ARDrawManager>
     private List<ARAnchor> arAnchors = new List<ARAnchor>();
     private Dictionary<int, ARLine> Lines = new Dictionary<int, ARLine>();
     private bool CanDraw { get; set; }
-    //public Events backendEvents;
+    public Events backendEvents;
 
     // Variables para el indicador visual
     private GameObject areaIndicator;
@@ -64,27 +58,22 @@ public class ARDrawManager : Singleton<ARDrawManager>
 
     void Awake()
     {
-        //backendEvents = FindObjectOfType<Events>();
+        backendEvents = FindObjectOfType<Events>();
     }
 
     void Start()
     {
         UpdateDrawingArea();
         //CreateAreaIndicator();
-
-        if (CommunicationManager.Instance != null) //if (_useDecentralizedNetwork && CommunicationManager.Instance != null)
-        {
-            CommunicationManager.Instance.SubscribeToTopic(DrawingTopic, HandleNetworkDrawing);
-        }
     }
-
+    
     private void HandleDrawingMessage(string message)
     {
         
         try
         {
             Drawings drawingData = JsonUtility.FromJson<Drawings>(message);
-            if (drawingData != null )//&& drawingData.roomId == backendEvents.roomId)
+            if (drawingData != null && drawingData.roomId == backendEvents.roomId)
             {
                 CreateAnchorFromData(drawingData);
             }
@@ -133,7 +122,7 @@ public class ARDrawManager : Singleton<ARDrawManager>
 
         drawingArea = new Rect(areaX, areaY, areaWidth, areaHeight);
         
-        //Debug.Log($"Área de dibujo: X={areaX}, Y={areaY}, Width={areaWidth}, Height={areaHeight}");
+        Debug.Log($"Área de dibujo: X={areaX}, Y={areaY}, Width={areaWidth}, Height={areaHeight}");
         
         if (areaIndicator != null)
         {
@@ -152,8 +141,8 @@ public class ARDrawManager : Singleton<ARDrawManager>
         rt.sizeDelta = new Vector2(drawingArea.width, drawingArea.height);
         
         // Debug visual
-        //Debug.Log($"Indicador posicionado en: X={rt.anchoredPosition.x}, Y={rt.anchoredPosition.y}, " +
-        //        $"Ancho={rt.sizeDelta.x}, Alto={rt.sizeDelta.y}");
+        Debug.Log($"Indicador posicionado en: X={rt.anchoredPosition.x}, Y={rt.anchoredPosition.y}, " +
+                $"Ancho={rt.sizeDelta.x}, Alto={rt.sizeDelta.y}");
     }
 
     public void DeserializeAndAddAnchor(string json)
@@ -178,12 +167,12 @@ public class ARDrawManager : Singleton<ARDrawManager>
     {
         // Ajustar las coordenadas del anchor (restar 1.15 m en Y)
         Vector3 adjustedAnchorPosition = drawingData.anchorPosition;
-        adjustedAnchorPosition.y -= 1.15f;//backendEvents.VROffset; // Ajuste para RV
+        adjustedAnchorPosition.y -= backendEvents.VROffset; // Ajuste para RV
 
         // Ajustar los puntos de la línea (restar 1.15 m en Y)
         List<Vector3> adjustedLinePoints = drawingData.linePoints.Select(point => {
             Vector3 adjustedPoint = point;
-            adjustedPoint.y -= 1.15f;//backendEvents.VROffset; // Ajuste para RV
+            adjustedPoint.y -= backendEvents.VROffset; // Ajuste para RV
             return adjustedPoint;
         }).ToList();
         
@@ -237,7 +226,7 @@ public class ARDrawManager : Singleton<ARDrawManager>
 
 
         //Debug.Log($"Anclaje y linea creados con exito desde los datos: {drawingData.anchorID}");
-        isDrawing = false;//backendEvents.drawing = false;
+        backendEvents.drawing = false;
     }
 
     private IEnumerator ProcessDrawingQueue()
@@ -260,7 +249,7 @@ public class ARDrawManager : Singleton<ARDrawManager>
         // Aplicar offset a todos los puntos recibidos
         List<Vector3> adjustedPoints = points.Select(point => {
             Vector3 adjustedPoint = point;
-            adjustedPoint.y -= 1.15f;//backendEvents.VROffset; // Ajuste para RV
+            adjustedPoint.y -= backendEvents.VROffset; // Ajuste para RV
             return adjustedPoint;
         }).ToList();
 
@@ -296,7 +285,7 @@ public class ARDrawManager : Singleton<ARDrawManager>
 
         // Restaurar configuración al finalizar
         lineSettings.SelectColor(currentSelectedColor);
-        isDrawing = false;//backendEvents.drawing = false;
+        backendEvents.drawing = false;
     }
 
     private void OnEnable()
@@ -391,24 +380,24 @@ public class ARDrawManager : Singleton<ARDrawManager>
         }
         else if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
         {
-            // Obtener la línea y su ancla asociada
+            // Get the line and anchor associated with this touch
             ARLine line = Lines[touch.touchId];
             ARAnchor anchor = arAnchors[arAnchors.Count - 1];
 
-            // Redondear los valores antes de serializar
+            // Round positions and prepare data for serialization
             Vector3 roundedAnchorPosition = anchor.transform.position;
-            roundedAnchorPosition.y += 1.15f;//backendEvents.VROffset;
+            roundedAnchorPosition.y += backendEvents.VROffset;
             
             List<Vector3> roundedLinePoints = line.GetPoints().Select(point => {
                 Vector3 adjustedPoint = RoundVector3(point);
-                adjustedPoint.y += 1.15f;//backendEvents.VROffset;
+                adjustedPoint.y += backendEvents.VROffset;
                 return adjustedPoint;
             }).ToList();
 
-            // Crear la instancia de Drawings
+            // Create the Drawings object
             Drawings serializedData = new Drawings(
-                "",//backendEvents.id,
-                "",//backendEvents.roomId,
+                backendEvents.id,
+                backendEvents.roomId,
                 anchor.trackableId.ToString(),
                 roundedAnchorPosition,
                 roundedLinePoints,
@@ -416,18 +405,10 @@ public class ARDrawManager : Singleton<ARDrawManager>
                 line.GetSize()
             );
 
-            // Convertir a JSON
+            // Convert to JSON
             string json = JsonUtility.ToJson(serializedData);
-
-            //if (_useDecentralizedNetwork)
-            //{
-                CommunicationManager.Instance?.PublishMessage(DrawingTopic, json);
-            //}
-            /*else
-            {
-                // Enviar a través del backendEvents
-                backendEvents.sendRoomAction(json + "|");
-            } */           
+            // Send to other peers
+            backendEvents.sendRoomAction(json + "|");
             Lines.Remove(touch.touchId);
         }
     }
@@ -517,14 +498,14 @@ public class ARDrawManager : Singleton<ARDrawManager>
         // ID del anchor
         string anchorID = anchor.trackableId.ToString();
 
-        /*Debug.Log("A new anchor was created!");
+        Debug.Log("A new anchor was created!");
         Debug.Log($"Anchor position: {anchorPosition}");
         Debug.Log($"Anchor rotation: {anchorRotation}");
         Debug.Log($"Anchor trackableId: {anchorID}");
 
         Debug.Log($"Now there are {arAnchors.Count} anchors in the AR world");
         Debug.Log($"The number of ARAnchors is: {anchorCount}");
-        Debug.Log($"The number of ARLines is: {lineCount}");*/
+        Debug.Log($"The number of ARLines is: {lineCount}");
     }
 
     private void DrawOnMouse()
@@ -563,12 +544,6 @@ public class ARDrawManager : Singleton<ARDrawManager>
 
     void OnDestroy()
     {
-        if (CommunicationManager.Instance != null)// && _useDecentralizedNetwork)
-        {
-            //CommunicationManager.Instance.UnsubscribeFromTopic(DrawingTopic, HandleNetworkDrawing);
-            CommunicationManager.Instance.Shutdown();
-        }
-
         if (areaIndicator != null)
         {
             Destroy(areaIndicator);

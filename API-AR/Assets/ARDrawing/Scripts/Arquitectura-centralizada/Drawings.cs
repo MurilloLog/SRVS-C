@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-
 public class Drawings
 {
     public string command;
@@ -20,15 +19,6 @@ public class Drawings
         command = "DRAWING";
         _id = playerId;
         roomId = _roomId;
-        anchorID = anchorId;
-        anchorPosition = position;
-        linePoints = points;
-        lineColor = color;
-        size = _size;
-    }
-
-    public Drawings(string anchorId, Vector3 position, List<Vector3> points, int color, int _size)
-    {
         anchorID = anchorId;
         anchorPosition = position;
         linePoints = points;
