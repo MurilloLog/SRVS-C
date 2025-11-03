@@ -133,16 +133,17 @@ A. The system supports theoretically unlimited connections, but practical perfor
 
 ## Please kindly cite our paper as:
 ```
-@inproceedings{,
-author = {},
-title = {},
+@article{SRVS-C,
+author = {Murillo Gutierrez, Gustavo Adolfo and Jin, Rong and Ramirez-Paredes, Juan-Pablo I. and Hernandez Belmonte, Uriel Haile},
+title = {A Framework Designed with Perceptual Symmetry and Interactive Asymmetry for {XR} Collaboration},
+journal = {Symmetry},
+volume = {17},
 year = {2025},
-isbn = {},
-publisher = {},
-address = {},
-url = {},
-doi = {},
-series = {}
+number = {11},
+article-number = {1842},
+url = {https://www.mdpi.com/2073-8994/17/11/1842},
+issn = {2073-8994},
+doi = {10.3390/sym17111842}
 }
 ```
 
