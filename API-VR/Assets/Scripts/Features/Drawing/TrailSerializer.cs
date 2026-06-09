@@ -7,6 +7,7 @@ public class TrailSerializer : MonoBehaviour
     public static TrailSerializer Instance { get; private set; }
     
     public GameObject trailPrefab;
+    private DrawingDataLogger dataLogger;
     
     // Cola para operaciones que deben ejecutarse en el hilo principal
     private readonly Queue<System.Action> _mainThreadActions = new Queue<System.Action>();
@@ -23,6 +24,8 @@ public class TrailSerializer : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
+        dataLogger = FindObjectOfType<DrawingDataLogger>();
     }
 
     private void Update()
@@ -55,6 +58,28 @@ public class TrailSerializer : MonoBehaviour
         }
     }
 
+    // Overloaded method to handle latency measurement
+    public void GenerateTrailFromJSON(string jsonData, long T4)
+    {
+        try
+        {
+            // La deserialización puede hacerse en cualquier hilo
+            var drawing = SerializationManager.Instance.Deserialize<DrawingModel>(jsonData);
+
+            // Enqueuing the creation of the trail for the main thread
+            EnqueueForMainThread(() =>
+            {
+                // Measure the time after the trail is fully created
+                //CreateTrail(drawing);
+                CreateTrail(drawing, T4);
+            });
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"Error al generar trail: {e.Message}");
+        }
+    }
+
     private void EnqueueForMainThread(System.Action action)
     {
         lock (_queueLock)
@@ -67,7 +92,7 @@ public class TrailSerializer : MonoBehaviour
     {
         // 1. Crear el Trail
         GameObject newTrail = Instantiate(trailPrefab, drawing.anchorPosition, Quaternion.identity);
-        
+
         // 2. Configurar el TrailRenderer
         TrailRenderer trailRenderer = newTrail.GetComponent<TrailRenderer>();
         if (trailRenderer == null)
@@ -84,8 +109,46 @@ public class TrailSerializer : MonoBehaviour
         trailRenderer.time = Mathf.Infinity;
         trailRenderer.minVertexDistance = 0.01f;
 
-        // 4. Generar puntos (versión optimizada)
+        // 4. Create trail points directly from the TrailRenderer (for animation consistency)
         GenerateTrailPoints(newTrail, drawing.linePoints);
+    }
+
+    private void CreateTrail(DrawingModel drawing, long T4)
+    {
+        // 1. Crear el Trail
+        GameObject newTrail = Instantiate(trailPrefab, drawing.anchorPosition, Quaternion.identity);
+
+        // 2. Configurar el TrailRenderer
+        TrailRenderer trailRenderer = newTrail.GetComponent<TrailRenderer>();
+        if (trailRenderer == null)
+        {
+            Debug.LogError("El prefab no contiene TrailRenderer");
+            Destroy(newTrail);
+            return;
+        }
+
+        // 3. Aplicar configuración
+        trailRenderer.widthMultiplier = drawing.size / 100f;
+        trailRenderer.startColor = IntToColor(drawing.lineColor);
+        trailRenderer.endColor = IntToColor(drawing.lineColor);
+        trailRenderer.time = Mathf.Infinity;
+        trailRenderer.minVertexDistance = 0.01f;
+
+        // 4. Create trail points directly from the TrailRenderer (for latency measurement consistency)
+        if (drawing.linePoints != null && drawing.linePoints.Count > 0)
+        {
+            trailRenderer.Clear();
+
+            trailRenderer.AddPosition(drawing.linePoints[0]);
+            for (int i = 1; i < drawing.linePoints.Count; i++)
+            {
+                trailRenderer.AddPosition(drawing.linePoints[i]);
+            }
+        }
+
+        long t5 = System.DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        LatencyMeasurementManager.Instance.SaveLatencyData(drawing.anchorID, T4, t5);
+        dataLogger.SaveDrawingData(drawing.anchorID, drawing.lineColor, drawing.size, drawing.linePoints);
     }
 
     private void GenerateTrailPoints(GameObject trailObj, List<Vector3> points)
@@ -94,7 +157,7 @@ public class TrailSerializer : MonoBehaviour
 
         TrailRenderer trailRenderer = trailObj.GetComponent<TrailRenderer>();
         trailRenderer.Clear();
-        
+
         // Método rápido para generar el trail
         StartCoroutine(GenerateTrailCoroutine(trailObj, points));
     }

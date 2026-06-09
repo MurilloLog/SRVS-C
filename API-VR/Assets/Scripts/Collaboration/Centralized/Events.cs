@@ -41,6 +41,9 @@ public class Events : MonoBehaviour
     private StringBuilder _messageBuilder = new StringBuilder(); // To accumulate fragments of messages
     private ISerializationService _JsonSerializer = new JsonSerializerService(); // Serializer instance
 
+    // Latency measurement manager
+    public LatencyMeasurementManager latencyManager;
+    
     void Start()
     {
         
@@ -50,6 +53,7 @@ public class Events : MonoBehaviour
     {
         networkBehaviour = FindObjectOfType<Networking>();
         conectionStatus = FindObjectOfType<ConectionStatus>();
+        latencyManager = FindObjectOfType<LatencyMeasurementManager>();
 
         // Check if ServerSettings gameobject exists
         GameObject serverSettingsObject = GameObject.Find("ServerSettings");
@@ -70,7 +74,7 @@ public class Events : MonoBehaviour
         else
         {
             // Default data
-            networkBehaviour.IP = "192.168.0.97"; // Default local server IP address
+            networkBehaviour.IP = "192.168.0.147"; // Default local server IP address
             networkBehaviour.PORT = 8080; // Default local server PORT
         }
 
@@ -91,6 +95,8 @@ public class Events : MonoBehaviour
     {
         try
         {
+            // Measure the time when the message is received from the server
+            long T4 = System.DateTimeOffset.Now.ToUnixTimeMilliseconds();
             Debug.Log("The message from server is: " + JsonFromServer);
                 // Command deserialization
                 JSONPackageReceived = _JsonSerializer.Deserialize<JsonData>(JsonFromServer);//JsonUtility.FromJson<JsonData>(JsonFromServer);
@@ -132,7 +138,8 @@ public class Events : MonoBehaviour
                         drawing = true;
                         try
                         {
-                            TrailSerializer.Instance.GenerateTrailFromJSON(JsonFromServer);
+                            //TrailSerializer.Instance.GenerateTrailFromJSON(JsonFromServer);
+                            TrailSerializer.Instance.GenerateTrailFromJSON(JsonFromServer, T4);
                         }
                         catch (System.Exception e)
                         {

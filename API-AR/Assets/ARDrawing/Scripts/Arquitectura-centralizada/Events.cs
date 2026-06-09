@@ -41,6 +41,9 @@ public class Events : MonoBehaviour
 
     private StringBuilder _messageBuilder = new StringBuilder(); // To accumulate fragments of messages
 
+    // Latency measurement manager
+    public LatencyMeasurementManager latencyManager;
+
     void Start()
     {
         
@@ -50,6 +53,7 @@ public class Events : MonoBehaviour
     {
         networkBehaviour = FindObjectOfType<Networking>();
         conectionStatus = FindObjectOfType<ConectionStatus>();
+        latencyManager = FindObjectOfType<LatencyMeasurementManager>();
 
         // Check if ServerSettings gameobject exists
         GameObject serverSettingsObject = GameObject.Find("ServerSettings");
@@ -70,7 +74,7 @@ public class Events : MonoBehaviour
         else
         {
             // Default data
-            networkBehaviour.IP = "192.168.0.97"; // Default local server IP address
+            networkBehaviour.IP = "192.168.0.147"; // Default local server IP address
             networkBehaviour.PORT = 8080; // Default local server PORT
         }
         
@@ -85,7 +89,7 @@ public class Events : MonoBehaviour
     public void readAction(string JsonFromServer)
     {
         // T4: timestamp when the message is received
-        //long T4 = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        long T4 = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         //Debug.Log("The message from server is: " + JsonFromServer);
         
@@ -128,7 +132,8 @@ public class Events : MonoBehaviour
 
                 case "DRAWING":
                     drawing = true;
-                    ARDrawManager.Instance.DeserializeAndAddAnchor(JsonFromServer);//T4);
+                    //ARDrawManager.Instance.DeserializeAndAddAnchor(JsonFromServer);
+                    ARDrawManager.Instance.DeserializeAndAddAnchor(JsonFromServer, T4);
                     //Debug.Log("Other player has drown...");
                 break;
 

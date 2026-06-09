@@ -13,7 +13,7 @@ import { serialize } from "v8";
 import * as protobufRoot from "./Utils/Serialization/Protobuf/Messages";
 import { ProtobufHandler } from "./Utils/Serialization/ProtobufHandler";
 
-const USERS_PER_ROOM = 1; // Set number of players for each room
+const USERS_PER_ROOM = 2; // Set number of players for each room
 const HEARTBEAT_INTERVAL = 40000; // 40 seconds to check player connectivity
 const INACTIVITY_THRESHOLD = 20000; // 20 seconds to consider a lost heartbeat
 const DISCONNECTION_TIMEOUT = 300000; // 5 minutes to consider a player disconnected

@@ -36,6 +36,7 @@ export class Room
                     player.conexion.writable) {
                         //player.conexion.write(message + "|", "utf8");
                         player.conexion.write(message);
+                        console.log(`Player ${player.id} has sended a msg.`);
                     } else {
                         console.log(`Player ${player.id} connection is invalid, destroyed or disconnected.`);
                     }

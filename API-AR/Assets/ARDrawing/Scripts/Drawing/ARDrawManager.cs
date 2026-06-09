@@ -51,6 +51,7 @@ public class ARDrawManager : Singleton<ARDrawManager>
     private Dictionary<int, ARLine> Lines = new Dictionary<int, ARLine>();
     private bool CanDraw { get; set; }
     public Events backendEvents;
+    private LatencyMeasurementManager latencyManager;
 
     // Variables para el indicador visual
     private GameObject areaIndicator;
@@ -59,6 +60,7 @@ public class ARDrawManager : Singleton<ARDrawManager>
     void Awake()
     {
         backendEvents = FindObjectOfType<Events>();
+        latencyManager = FindObjectOfType<LatencyMeasurementManager>();
     }
 
     void Start()
@@ -162,6 +164,24 @@ public class ARDrawManager : Singleton<ARDrawManager>
             //Debug.LogError("No se pudo deserializar el JSON.");
         }
     }
+    
+    public void DeserializeAndAddAnchor(string json, long T4)
+    {
+        // Deserializar el JSON recibido
+        //Drawing drawingData = JsonUtility.FromJson<Drawing>(json);
+        Drawings drawingData = JsonUtility.FromJson<Drawings>(json);
+        //drawingData.SetTimestampT4(timestampT4);
+
+        if (drawingData != null)
+        {
+            CreateAnchorFromData(drawingData, T4);
+            //Debug.Log("El anchor del otro jugador se creo correctamente.");
+        }
+        else
+        {
+            //Debug.LogError("No se pudo deserializar el JSON.");
+        }
+    }
 
     private void CreateAnchorFromData(Drawings drawingData)
     {
@@ -170,12 +190,13 @@ public class ARDrawManager : Singleton<ARDrawManager>
         adjustedAnchorPosition.y -= backendEvents.VROffset; // Ajuste para RV
 
         // Ajustar los puntos de la línea (restar 1.15 m en Y)
-        List<Vector3> adjustedLinePoints = drawingData.linePoints.Select(point => {
+        List<Vector3> adjustedLinePoints = drawingData.linePoints.Select(point =>
+        {
             Vector3 adjustedPoint = point;
             adjustedPoint.y -= backendEvents.VROffset; // Ajuste para RV
             return adjustedPoint;
         }).ToList();
-        
+
         // Crear un GameObject para el Anchor
         GameObject anchorObject = new GameObject($"Anchor_{drawingData.anchorID}");
         anchorObject.transform.position = adjustedAnchorPosition;//drawingData.anchorPosition;
@@ -199,9 +220,10 @@ public class ARDrawManager : Singleton<ARDrawManager>
         lineSettings.SelectColor(drawingData.lineColor);
         lineSettings.SetLineRef(drawingData.size);
         line.AddNewLineRenderer(transform, anchor, adjustedAnchorPosition); //drawingData.anchorPosition);
-        
+
         // Encolar la tarea de dibujo
-        drawingQueue.Enqueue(new DrawingTask {
+        drawingQueue.Enqueue(new DrawingTask
+        {
             drawingData = drawingData,
             line = line,
             anchor = anchor
@@ -228,11 +250,80 @@ public class ARDrawManager : Singleton<ARDrawManager>
         //Debug.Log($"Anclaje y linea creados con exito desde los datos: {drawingData.anchorID}");
         backendEvents.drawing = false;
     }
+    
+    private void CreateAnchorFromData(Drawings drawingData, long T4)
+    {
+        // Ajustar las coordenadas del anchor (restar 1.15 m en Y)
+        Vector3 adjustedAnchorPosition = drawingData.anchorPosition;
+        adjustedAnchorPosition.y -= backendEvents.VROffset; // Ajuste para RV
+
+        // Ajustar los puntos de la línea (restar 1.15 m en Y)
+        List<Vector3> adjustedLinePoints = drawingData.linePoints.Select(point =>
+        {
+            Vector3 adjustedPoint = point;
+            adjustedPoint.y -= backendEvents.VROffset; // Ajuste para RV
+            return adjustedPoint;
+        }).ToList();
+
+        // Crear un GameObject para el Anchor
+        GameObject anchorObject = new GameObject($"Anchor_{drawingData.anchorID}");
+        anchorObject.transform.position = adjustedAnchorPosition;//drawingData.anchorPosition;
+        anchorObject.transform.rotation = Quaternion.identity;
+
+        // Agregar un ARAnchor al GameObject
+        ARAnchor anchor = anchorObject.AddComponent<ARAnchor>();
+
+        if (anchor == null)
+        {
+            //Debug.LogError("Error al crear el anclaje desde los datos recibidos.");
+            return;
+        }
+
+        // Agregar el Anchor a la lista local
+        arAnchors.Add(anchor);
+
+        // Crear una nueva linea y aniadir los puntos recibidos
+        ARLine line = new ARLine(lineSettings, this);
+        currentSelectedColor = line.GetCurrentColor();
+        lineSettings.SelectColor(drawingData.lineColor);
+        lineSettings.SetLineRef(drawingData.size);
+        line.AddNewLineRenderer(transform, anchor, adjustedAnchorPosition); //drawingData.anchorPosition);
+
+        // Encolar la tarea de dibujo
+        drawingQueue.Enqueue(new DrawingTask
+        {
+            drawingData = drawingData,
+            line = line,
+            anchor = anchor
+        });
+
+        // Iniciar el proceso si no estaba activo
+        if (!isDrawing)
+        {
+            StartCoroutine(ProcessDrawingQueue());
+        }
+
+        // Aniadir la linea al diccionario local
+        //Lines.Add(Lines.Count, line);
+        lineSettings.SelectColor(currentSelectedColor);
+
+        // Timestamp desde donde se considera que ha finalizado la replica de una instruccion
+        long T5 = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        latencyManager.SaveLatencyData(drawingData.anchorID, T4, T5);
+        //drawingData.SetTimestampT5(T5);
+        //drawingData.SaveLatencyData();
+        //Debug.LogError("Mensaje replicado exitosamente a las: " + T5.ToString());
+        //Debug.LogError("La latencia del mensaje fue de: " + (drawingData.T1 - T5).ToString());
+
+
+        //Debug.Log($"Anclaje y linea creados con exito desde los datos: {drawingData.anchorID}");
+        backendEvents.drawing = false;
+    }
 
     private IEnumerator ProcessDrawingQueue()
     {
         isDrawing = true;
-        
+
         while (drawingQueue.Count > 0)
         {
             DrawingTask task = drawingQueue.Dequeue();
@@ -387,12 +478,15 @@ public class ARDrawManager : Singleton<ARDrawManager>
             // Round positions and prepare data for serialization
             Vector3 roundedAnchorPosition = anchor.transform.position;
             roundedAnchorPosition.y += backendEvents.VROffset;
-            
-            List<Vector3> roundedLinePoints = line.GetPoints().Select(point => {
+
+            List<Vector3> roundedLinePoints = line.GetPoints().Select(point =>
+            {
                 Vector3 adjustedPoint = RoundVector3(point);
                 adjustedPoint.y += backendEvents.VROffset;
                 return adjustedPoint;
             }).ToList();
+
+            int pointCount = roundedLinePoints.Count;
 
             // Create the Drawings object
             Drawings serializedData = new Drawings(
@@ -407,6 +501,11 @@ public class ARDrawManager : Singleton<ARDrawManager>
 
             // Convert to JSON
             string json = JsonUtility.ToJson(serializedData);
+
+            long T1 = System.DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            int messageSize = System.Text.Encoding.UTF8.GetByteCount(json);
+            latencyManager.RecordT1(anchor.trackableId.ToString(), T1, messageSize, pointCount);
+
             // Send to other peers
             backendEvents.sendRoomAction(json + "|");
             Lines.Remove(touch.touchId);
